@@ -117,7 +117,7 @@ namespace NGT {
     public:
       Command():debugLevel(0) {}
 
-      void 
+      void
         create(Args &args)
         {
           const string usage = "Usage: ngt create "
@@ -239,7 +239,7 @@ namespace NGT {
           }
         }
 
-      void 
+      void
         append(Args &args)
         {
           const string usage = "Usage: ngt append [-p #-of-thread] [-d dimension] [-n data-size] "
