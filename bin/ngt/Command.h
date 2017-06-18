@@ -15,7 +15,11 @@
 //
 
 #include  "NGT/Index.h"
+#include  "NGT/json.hpp"
+#include  <vector>
+#include  <map>
 
+using json = nlohmann::json;
 
 namespace NGT {
 
@@ -325,6 +329,7 @@ namespace NGT {
       static void
         search(NGT::Index &index, SearchParameter &searchParameter, ostream &stream)
         {
+          std::vector<std::vector<std::map<string, double> > > output;
 
           if (searchParameter.outputMode[0] == 'e') {
             stream << "# Beginning of Evaluation" << endl;
@@ -395,6 +400,7 @@ namespace NGT {
               } catch (NGT::Exception &err) {
                 throw err;
               }
+
               totalTime += timer.time;
               if (searchParameter.outputMode[0] == 'e') {
                 stream << "# Query No.=" << queryCount << endl;
@@ -404,21 +410,40 @@ namespace NGT {
                 stream << "# Radius=" << searchParameter.radius << endl;
                 stream << "# Epsilon=" << epsilon << endl;
                 stream << "# Query Time (msec)=" << timer.time * 1000.0 << endl;
+              } else if (searchParameter.outputMode[0] == 'j') {
+                // json
               } else {
                 stream << "Query No." << queryCount << endl;
                 stream << "Rank\tID\tDistance" << endl;
               }
 
-              for (size_t i = 0; i < objects.size(); i++) {
-                stream << i + 1 << "\t" << objects[i].id << "\t";
-                stream << objects[i].distance << endl;
+              if (searchParameter.outputMode[0] == 'j') {
+                // json
+                std::vector<std::map<string, double> > rank;
+                for (size_t i = 0; i < objects.size(); i++) {
+                  std::map<string, double> mp;
+                  mp["queryNo"] = queryCount;
+                  mp["rank"] = i + 1;
+                  mp["id"] = objects[i].id;
+                  mp["distance"] = objects[i].distance;
+                  rank.push_back(mp);
+                }
+                output.push_back(rank);
+              } else {
+                for (size_t i = 0; i < objects.size(); i++) {
+                  stream << i + 1 << "\t" << objects[i].id << "\t";
+                  stream << objects[i].distance << endl;
+                }
+
+                if (searchParameter.outputMode[0] == 'e') {
+                  stream << "# End of Search" << endl;
+                } else if (searchParameter.outputMode[0] == 'j') {
+                  // json
+                } else {
+                  stream << "Query Time= " << timer.time << " (sec), " << timer.time * 1000.0 << " (msec)" << endl;
+                }
               }
 
-              if (searchParameter.outputMode[0] == 'e') {
-                stream << "# End of Search" << endl;
-              } else {
-                stream << "Query Time= " << timer.time << " (sec), " << timer.time * 1000.0 << " (msec)" << endl;
-              }
             } // for
             index.deleteObject(object);
             if (searchParameter.outputMode[0] == 'e') {
@@ -469,6 +494,9 @@ namespace NGT {
               stream << "# Average number of edges=" << (double)numberOfEdges / (double)numberOfNodes << endl;
               stream << "# Average distance of edges=" << setprecision(10) << distance / (double)numberOfEdges << endl;
             }
+          } else if (searchParameter.outputMode[0] == 'j') {
+            json j(output);
+            stream << j.dump() << endl;
           } else {
             stream << "Average Query Time= " << totalTime / (double)queryCount  << " (sec), "
               << totalTime * 1000.0 / (double)queryCount << " (msec), (" 
@@ -923,5 +951,4 @@ namespace NGT {
           int debugLevel;
 
         };
-  }
 }; // NGT
